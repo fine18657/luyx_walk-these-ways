@@ -1,0 +1,72 @@
+奖励函数中的启发式落脚点：
+原始：
+x_vel_des = self.env.commands[:, 0:1]
+y_vel_des = yaw_vel_des * desired_stance_length / 2
+修改：完全使用yaw带来的x y线速度规划落脚点：
+x_vel_des = yaw_vel_des * desired_stance_width / 2
+y_vel_des=  yaw_vel_des * desired_stance_length / 2
+/home/ask-spc/luyx/walk-these-ways/runs/gait-conditioned-agility/2024-09-07/train/023855.945774
+效果不错
+
+
+尝试：二者均使用
+x_vel_des = yaw_vel_des * desired_stance_width / 2+self.env.commands[:, 0:1]
+y_vel_des=  yaw_vel_des * desired_stance_length / 2+self.env.commands[:, 1:2]
+033339.457671
+
+
+
+再尝试：使用原始的计算方式，length改为0.38，width0.3不变（测量发现length0.45过长）
+044249.972583
+todo 重要！！！
+
+
+原始代码中train的范围为0.35-0.45，原始reward中的length为0.45.
+length改为0.4。
+054334.249796
+经测试，0.38符合机身长度，效果其实都差不多。
+在速度很快时（-3）0.38比0.4效果更好，不容易摔倒。速度慢差不多。
+以后都使用0.38
+
+
+增加smooth2：-0.1
+前进差不多，后退明显更差
+smooth2去除
+082348.686126
+
+
+增加抬腿高度奖励-30
+明显变差，开始绕圈了
+082524.097425
+
+
+训练时使用P而非actor net
+不使用抬腿高度。查看actor net有无影响
+效果非常差。
+train、play都应该使用actor net
+都使用yaw
+093250.076664
+
+
+针对启发式算法奖励项，原代码：x使用command，y使用yaw产生的线速度
+使用yaw产生的线速度command的速度之和（个人认为应该是这样）
+/home/ask-spc/luyx/walk-these-ways/runs/gait-conditioned-agility/2024-09-07/train/104208.048262
+
+都仅使用yaw所产生的x，y线速度来计算
+/home/ask-spc/luyx/walk-these-ways/runs/gait-conditioned-agility/2024-09-07/train/115940.787710
+上面的低速效果比较好，走直线时不会产生偏航角。下面的以及原始的高速效果走的比较好。
+使用上面的。
+
+
+
+
+
+
+
+
+ todo 启发式算法中到底使用哪一个计算（改为0.38后，并未重新测试他们之间的区别：原始（已经有了，第3个）、都使用yaw、都使用comman加yaw）
+ todo 增加抬腿高度奖励后，速度受到很大的限制。无法走快。解决。速度与抬腿高度目前无法兼得。考虑降低训练时的速度limit，或抬腿高度使用课程
+ todo 总曲线训练到3000左右开始急剧下降，且与速度追踪曲线几乎一致。找出曲线急剧下降随后又急剧上升的原因
+
+
+
